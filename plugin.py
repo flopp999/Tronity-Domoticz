@@ -1,9 +1,9 @@
-# SkodaConnect Python Plugin
+# Tronity Python Plugin
 #
 # Author: flopp999
 #
 """
-<plugin key="SkodaConnect" name="SkodaConnect 0.22" author="flopp999" version="0.22" wikilink="https://github.com/flopp999/SkodaConnect-Domoticz" externallink="https://www.skoda-connect.com">
+<plugin key="Tronity" name="Tronity 0.1" author="flopp999" version="0.1" wikilink="https://github.com/flopp999/SkodaConnect-Domoticz" externallink="https://www.skoda-connect.com">
     <description>
         <h2>Support me with a coffee &<a href="https://www.buymeacoffee.com/flopp999">https://www.buymeacoffee.com/flopp999</a></h2><br/>
         <h2>or use my Tibber link &<a href="https://tibber.com/se/invite/8af85f51">https://tibber.com/se/invite/8af85f51</a></h2><br/>
