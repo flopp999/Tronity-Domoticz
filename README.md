@@ -1,1 +1,1 @@
-# Trpnity-Domoticz
+# Tronity-Domoticz
