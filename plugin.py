@@ -3,7 +3,7 @@
 # Author: flopp999
 #
 """
-<plugin key="Tronity" name="Tronity 0.1" author="flopp999" version="0.1" wikilink="https://github.com/flopp999/Tronity-Domoticz" externallink="https://www.tronity.io">
+<plugin key="Tronity" name="Tronity 0.2" author="flopp999" version="0.2" wikilink="https://github.com/flopp999/Tronity-Domoticz" externallink="https://www.tronity.io">
     <description>
         <h2>Support me with a coffee &<a href="https://www.buymeacoffee.com/flopp999">https://www.buymeacoffee.com/flopp999</a></h2><br/>
         <h2>or use my Tibber link &<a href="https://tibber.com/se/invite/8af85f51">https://tibber.com/se/invite/8af85f51</a></h2><br/>
@@ -39,7 +39,7 @@ except ImportError as e:
     Package = False
 
 try:
-    from datetime import datetime
+    from datetime import datetime, timedelta
 except ImportError as e:
     Package = False
 
@@ -102,7 +102,7 @@ class BasePlugin:
                 elif Connection.Name == ("Get Data"):
                     WriteDebug("Get Data")
                     headers = { 'Host': 'api-eu.tronity.io', 'Authorization': 'Bearer '+self.token}
-                    Connection.Send({'Verb':'GET', 'URL': '/v1/vehicles/'+self.CarId+'/battery', 'Headers': headers})
+                    Connection.Send({'Verb':'GET', 'URL': '/v1/vehicles/'+self.CarId+'/bulk', 'Headers': headers})
 
 
 
@@ -117,17 +117,19 @@ class BasePlugin:
                 self.token = Data["access_token"]
                 self.GetToken.Disconnect()
                 self.GetID.Connect()
-                Domoticz.Log("Token recevied")
+                Domoticz.Log("Token received")
 
             if Connection.Name == ("Get ID"):
                 for each in Data["data"]:
                     self.CarId = each["id"]
                     self.GetData.Connect()
                 self.GetID.Disconnect()
-                Domoticz.Log("Car ID recevied")
+                Domoticz.Log("Car ID received")
 
             if Connection.Name == ("Get Data"):
                 for name,value in Data.items():
+                    Domoticz.Log(str(name))
+                    Domoticz.Log(str(value))
                     UpdateDevice(str(value), name)
                 self.GetData.Disconnect()
                 Domoticz.Log("Data Updated")
@@ -159,14 +161,32 @@ def onStart():
     _plugin.onStart()
 
 def UpdateDevice(sValue, Name):
-    if Name == "range":
+    if Name == "odometer":
         ID = 1
+        Unit = ""
+    if Name == "range":
+        ID = 2
         Unit = "km"
     if Name == "level":
-        ID = 2
-        Unit = "%"
-    if Name == "timestamp":
         ID = 3
+        Unit = "%"
+    if Name == "charging":
+        ID = 4
+        if sValue == "Charging":
+            sValue = 1
+        if sValue == "Diconnected":
+            sValue = 0
+        Unit = ""
+    if Name == "latitude":
+        ID = 5
+        Unit = ""
+    if Name == "longitude":
+        ID = 6
+        Unit = ""
+    if Name == "timestamp":
+        ID = 7
+        sValue = timedelta(milliseconds=int(sValue))
+        Domoticz.Log(str(sValue))
         Unit = ""
     if (ID in Devices):
         if Devices[ID].sValue != sValue:
@@ -177,8 +197,8 @@ def UpdateDevice(sValue, Name):
             Used = 0
         else:
             Used = 1
-        Domoticz.Device(Name=Name, Unit=ID, TypeName="Custom", Options={"Custom": "0;"+Unit}, Used=1).Create()
-#        Domoticz.Device(Name=Name, Unit=ID, TypeName="Custom", Options={"Custom": "0;"+Unit}, Used=1, Image=(_plugin.ImageID)).Create()
+#        Domoticz.Device(Name=Name, Unit=ID, TypeName="Custom", Options={"Custom": "0;"+Unit}, Used=1).Create()
+        Domoticz.Device(Name=Name, Unit=ID, TypeName="Custom", Options={"Custom": "0;"+Unit}, Used=1, Image=(_plugin.ImageID)).Create()
 
 def CheckInternet():
     WriteDebug("Entered CheckInternet")
