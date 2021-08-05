@@ -56,14 +56,17 @@ class BasePlugin:
         self.token = ''
         self.loop = 0
         self.Count = 5
+        self.CarIds = []
+        self.FirstError = True
         return
 
     def onStart(self):
+#        Domoticz.Debugging(128)
         WriteDebug("===onStart===")
         self.Id = Parameters["Mode1"]
         self.Secret = Parameters["Mode2"]
 
-        if len(self.Id) < 3:
+        if len(self.Id) != 36:
             Domoticz.Log("Identifier too short")
             WriteDebug("Identifier too short")
 
@@ -95,18 +98,28 @@ class BasePlugin:
                     Connection.Send({'Verb':'POST', 'URL': '/oauth/authentication', 'Headers': headers, 'Data': data})
 
                 elif Connection.Name == ("Get ID"):
+                    if self.token == "":
+                        self.GetID.Disconnect()
+                        Domoticz.Log("Missing Token, will try to get it")
+                        self.GetToken.Connect()
                     WriteDebug("Get ID")
                     headers = { 'Host': 'api-eu.tronity.io', 'Authorization': 'Bearer '+self.token}
                     Connection.Send({'Verb':'GET', 'URL': '/v1/vehicles', 'Headers': headers})
 
                 elif Connection.Name == ("Get Data"):
+                    if self.CarIds == []:
+                        self.GetData.Disconnect()
+                        Domoticz.Log("Missing Car ID, will try to get it")
+                        self.GetToken.Connect()
                     WriteDebug("Get Data")
                     headers = { 'Host': 'api-eu.tronity.io', 'Authorization': 'Bearer '+self.token}
-                    Connection.Send({'Verb':'GET', 'URL': '/v1/vehicles/'+self.CarId+'/bulk', 'Headers': headers})
+                    for CarId in self.CarIds:
+                        Connection.Send({'Verb':'GET', 'URL': '/v1/vehicles/'+CarId+'/bulk', 'Headers': headers})
 
 
 
     def onMessage(self, Connection, Data):
+#        Domoticz.Log(str(Data))
         Status = int(Data["Status"])
 
         if Status == 200 or Status == 201:
@@ -116,23 +129,33 @@ class BasePlugin:
             if Connection.Name == ("Get Token"):
                 self.token = Data["access_token"]
                 self.GetToken.Disconnect()
-                self.GetID.Connect()
                 Domoticz.Log("Token received")
+                self.GetID.Connect()
 
-            if Connection.Name == ("Get ID"):
+            elif Connection.Name == ("Get ID"):
+                self.CarIds=[]
                 for each in Data["data"]:
-                    self.CarId = each["id"]
-                    self.GetData.Connect()
+                    self.CarIds.append(each["id"])
                 self.GetID.Disconnect()
                 Domoticz.Log("Car ID received")
+                Domoticz.Log(str(self.CarIds))
+                self.GetData.Connect()
 
-            if Connection.Name == ("Get Data"):
+            elif Connection.Name == ("Get Data"):
                 for name,value in Data.items():
                     Domoticz.Log(str(name))
                     Domoticz.Log(str(value))
                     UpdateDevice(str(value), name)
                 self.GetData.Disconnect()
                 Domoticz.Log("Data Updated")
+
+        elif Status == 401 and self.FirstError == True:
+            Domoticz.Error("first")
+            self.FirstError = False
+
+        elif Status == 500:
+            Domoticz.Error("Is your Client ID 36 characters long?")
+
 
         else:
             WriteDebug("Status = "+str(Status))
@@ -148,8 +171,8 @@ class BasePlugin:
 
     def onHeartbeat(self):
         self.Count += 1
-        if self.Count == 6 and not self.GetToken.Connected() and not self.GetToken.Connecting():
-            self.GetToken.Connect()
+        if self.Count == 6 and not self.GetData.Connected() and not self.GetData.Connecting():
+            self.GetData.Connect()
             WriteDebug("onHeartbeat")
             self.Count = 0
 
@@ -185,8 +208,8 @@ def UpdateDevice(sValue, Name):
         Unit = ""
     if Name == "timestamp":
         ID = 7
-        sValue = timedelta(milliseconds=int(sValue))
-        Domoticz.Log(str(sValue))
+#        sValue = timedelta(milliseconds=int(sValue))
+#        Domoticz.Log(str(sValue))
         Unit = ""
     if (ID in Devices):
         if Devices[ID].sValue != sValue:
@@ -208,11 +231,11 @@ def CheckInternet():
         WriteDebug("Internet is OK")
         return True
     except:
-        if _plugin.GetToken.Connected():
+        if _plugin.GetToken.Connected() or _plugin.GetToken.Connecting():
             _plugin.GetToken.Disconnect()
-        if _plugin.GetData.Connected():
+        if _plugin.GetData.Connected() or _plugin.GetData.Connecting():
             _plugin.GetData.Disconnect()
-        if _plugin.GetID.Connected():
+        if _plugin.GetID.Connected() or _plugin.GetID.Connecting():
             _plugin.GetID.Disconnect()
 
         WriteDebug("Internet is not available")
