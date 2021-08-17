@@ -3,7 +3,7 @@
 # Author: flopp999
 #
 """
-<plugin key="Tronity" name="Tronity 0.22" author="flopp999" version="0.22" wikilink="https://github.com/flopp999/Tronity-Domoticz" externallink="https://www.tronity.io">
+<plugin key="Tronity" name="Tronity 0.23" author="flopp999" version="0.23" wikilink="https://github.com/flopp999/Tronity-Domoticz" externallink="https://www.tronity.io">
     <description>
         <h2>Support me with a coffee &<a href="https://www.buymeacoffee.com/flopp999">https://www.buymeacoffee.com/flopp999</a></h2><br/>
         <h2>or use my Tibber link &<a href="https://tibber.com/se/invite/8af85f51">https://tibber.com/se/invite/8af85f51</a></h2><br/>
@@ -88,6 +88,8 @@ class BasePlugin:
 
     def onConnect(self, Connection, Status, Description):
         WriteDebug("onConnect")
+        WriteDebug("Test av Status")
+        WriteDebug(str(Status))
         if CheckInternet() == True:
             if (Status == 0):
 
@@ -152,9 +154,16 @@ class BasePlugin:
         elif Status == 401 and self.FirstError == True:
             Domoticz.Error("first")
             self.FirstError = False
+            if _plugin.GetToken.Connected():
+                _plugin.GetToken.Disconnect()
+            if _plugin.GetData.Connected():
+                _plugin.GetData.Disconnect()
+            if _plugin.GetID.Connected():
+                _plugin.GetID.Disconnect()
+            self.GetToken.Connect()
 
-        elif Status == 500:
-            Domoticz.Error("Is your Client ID 36 characters long?")
+#        elif Status == 500:
+#            Domoticz.Error("Is your Client ID 36 characters long?")
 
 
         else:
@@ -199,7 +208,7 @@ def UpdateDevice(sValue, Name):
             sValue = 1
         if sValue == "Disconnected":
             sValue = 0
-        Unit = ""
+            Unit = ""
     if Name == "latitude":
         ID = 5
         Unit = ""
