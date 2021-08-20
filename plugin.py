@@ -3,7 +3,7 @@
 # Author: flopp999
 #
 """
-<plugin key="Tronity" name="Tronity 0.23" author="flopp999" version="0.23" wikilink="https://github.com/flopp999/Tronity-Domoticz" externallink="https://www.tronity.io">
+<plugin key="Tronity" name="Tronity 0.24" author="flopp999" version="0.24" wikilink="https://github.com/flopp999/Tronity-Domoticz" externallink="https://www.tronity.io">
     <description>
         <h2>Support me with a coffee &<a href="https://www.buymeacoffee.com/flopp999">https://www.buymeacoffee.com/flopp999</a></h2><br/>
         <h2>or use my Tibber link &<a href="https://tibber.com/se/invite/8af85f51">https://tibber.com/se/invite/8af85f51</a></h2><br/>
@@ -154,11 +154,17 @@ class BasePlugin:
         elif Status == 401 and self.FirstError == True:
             Domoticz.Error("first")
             self.FirstError = False
+
             if _plugin.GetToken.Connected():
+                Domoticz.Error("GetToken")
                 _plugin.GetToken.Disconnect()
+
             if _plugin.GetData.Connected():
+                Domoticz.Error("GetData")
                 _plugin.GetData.Disconnect()
+
             if _plugin.GetID.Connected():
+                Domoticz.Error("GetID")
                 _plugin.GetID.Disconnect()
             self.GetToken.Connect()
 
