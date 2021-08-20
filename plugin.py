@@ -214,7 +214,7 @@ def UpdateDevice(sValue, Name):
             sValue = 1
         if sValue == "Disconnected":
             sValue = 0
-            Unit = ""
+        Unit = ""
     if Name == "latitude":
         ID = 5
         Unit = ""
@@ -235,7 +235,6 @@ def UpdateDevice(sValue, Name):
             Used = 0
         else:
             Used = 1
-#        Domoticz.Device(Name=Name, Unit=ID, TypeName="Custom", Options={"Custom": "0;"+Unit}, Used=1).Create()
         Domoticz.Device(Name=Name, Unit=ID, TypeName="Custom", Options={"Custom": "0;"+Unit}, Used=1, Image=(_plugin.ImageID)).Create()
 
 def CheckInternet():
