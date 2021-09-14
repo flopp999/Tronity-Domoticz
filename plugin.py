@@ -3,10 +3,9 @@
 # Author: flopp999
 #
 """
-<plugin key="Tronity" name="Tronity 0.24" author="flopp999" version="0.24" wikilink="https://github.com/flopp999/Tronity-Domoticz" externallink="https://www.tronity.io">
+<plugin key="Tronity" name="Tronity 0.25" author="flopp999" version="0.25" wikilink="https://github.com/flopp999/Tronity-Domoticz" externallink="https://www.tronity.io">
     <description>
         <h2>Support me with a coffee &<a href="https://www.buymeacoffee.com/flopp999">https://www.buymeacoffee.com/flopp999</a></h2><br/>
-        <h2>or use my Tibber link &<a href="https://tibber.com/se/invite/8af85f51">https://tibber.com/se/invite/8af85f51</a></h2><br/>
         <h2>If you want to get 2 extra trial weeks and at the same time support me, please use this link &<a href="https://app.tronity.io/signup/9ZVleQDQu">https://app.tronity.io/signup/9ZVleQDQu</a></h2><br/>
         <h3>Configuration</h3>
         <h4>Use Client Id and Client Secret from Tronity Platform &<a href="https://app.platform.tronity.io/apps">https://app.platform.tronity.io/apps</a></h4><br/>
@@ -145,15 +144,16 @@ class BasePlugin:
 
             elif Connection.Name == ("Get Data"):
                 for name,value in Data.items():
-                    Domoticz.Log(str(name))
-                    Domoticz.Log(str(value))
+#                    Domoticz.Log(str(name))
+#                    Domoticz.Log(str(value))
                     UpdateDevice(str(value), name)
                 self.GetData.Disconnect()
                 Domoticz.Log("Data Updated")
 
-        elif Status == 401 and self.FirstError == True:
+#        elif Status == 401 and self.FirstError == True:
+        elif Status == 401:
             Domoticz.Error("first")
-            self.FirstError = False
+#            self.FirstError = False
 
             if _plugin.GetToken.Connected():
                 Domoticz.Error("GetToken")
