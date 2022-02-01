@@ -3,9 +3,11 @@
 # Author: flopp999
 #
 """
-<plugin key="Tronity" name="Tronity 0.25" author="flopp999" version="0.25" wikilink="https://github.com/flopp999/Tronity-Domoticz" externallink="https://www.tronity.io">
+<plugin key="Tronity" name="Tronity 0.28" author="flopp999" version="0.28" wikilink="https://github.com/flopp999/Tronity-Domoticz" externallink="https://www.tronity.io">
     <description>
         <h2>Support me with a coffee &<a href="https://www.buymeacoffee.com/flopp999">https://www.buymeacoffee.com/flopp999</a></h2><br/>
+        <h2>Support me with a donation &<a href="https://www.paypal.com/paypalme/flopp999">https://www.paypal.com/paypalme/flopp999</a></h2><br/>
+        <h2>Use my Tibber link &<a href="https://tibber.com/se/invite/8af85f51">https://tibber.com/se/invite/8af85f51</a></h2><br/>
         <h2>If you want to get 2 extra trial weeks and at the same time support me, please use this link &<a href="https://app.tronity.io/signup/9ZVleQDQu">https://app.tronity.io/signup/9ZVleQDQu</a></h2><br/>
         <h3>Configuration</h3>
         <h4>Use Client Id and Client Secret from Tronity Platform &<a href="https://app.platform.tronity.io/apps">https://app.platform.tronity.io/apps</a></h4><br/>
@@ -38,7 +40,7 @@ except ImportError as e:
     Package = False
 
 try:
-    from datetime import datetime, timedelta
+    import datetime
 except ImportError as e:
     Package = False
 
@@ -60,7 +62,6 @@ class BasePlugin:
         return
 
     def onStart(self):
-#        Domoticz.Debugging(128)
         WriteDebug("===onStart===")
         self.Id = Parameters["Mode1"]
         self.Secret = Parameters["Mode2"]
@@ -87,8 +88,6 @@ class BasePlugin:
 
     def onConnect(self, Connection, Status, Description):
         WriteDebug("onConnect")
-        WriteDebug("Test av Status")
-        WriteDebug(str(Status))
         if CheckInternet() == True:
             if (Status == 0):
 
@@ -99,6 +98,7 @@ class BasePlugin:
                     Connection.Send({'Verb':'POST', 'URL': '/oauth/authentication', 'Headers': headers, 'Data': data})
 
                 elif Connection.Name == ("Get ID"):
+
                     if self.token == "":
                         self.GetID.Disconnect()
                         Domoticz.Log("Missing Token, will try to get it")
@@ -111,7 +111,7 @@ class BasePlugin:
                     if self.CarIds == []:
                         self.GetData.Disconnect()
                         Domoticz.Log("Missing Car ID, will try to get it")
-                        self.GetToken.Connect()
+                        self.GetID.Connect()
                     WriteDebug("Get Data")
                     headers = { 'Host': 'api-eu.tronity.io', 'Authorization': 'Bearer '+self.token}
                     for CarId in self.CarIds:
@@ -120,7 +120,6 @@ class BasePlugin:
 
 
     def onMessage(self, Connection, Data):
-#        Domoticz.Log(str(Data))
         Status = int(Data["Status"])
 
         if Status == 200 or Status == 201:
@@ -144,32 +143,22 @@ class BasePlugin:
 
             elif Connection.Name == ("Get Data"):
                 for name,value in Data.items():
-#                    Domoticz.Log(str(name))
-#                    Domoticz.Log(str(value))
                     UpdateDevice(str(value), name)
                 self.GetData.Disconnect()
                 Domoticz.Log("Data Updated")
 
-#        elif Status == 401 and self.FirstError == True:
         elif Status == 401:
-            Domoticz.Error("first")
-#            self.FirstError = False
-
             if _plugin.GetToken.Connected():
                 Domoticz.Error("GetToken")
                 _plugin.GetToken.Disconnect()
 
             if _plugin.GetData.Connected():
-                Domoticz.Error("GetData")
                 _plugin.GetData.Disconnect()
 
             if _plugin.GetID.Connected():
                 Domoticz.Error("GetID")
                 _plugin.GetID.Disconnect()
             self.GetToken.Connect()
-
-#        elif Status == 500:
-#            Domoticz.Error("Is your Client ID 36 characters long?")
 
 
         else:
@@ -186,7 +175,7 @@ class BasePlugin:
 
     def onHeartbeat(self):
         self.Count += 1
-        if self.Count == 6 and not self.GetData.Connected() and not self.GetData.Connecting():
+        if self.Count >= 6 and not self.GetData.Connected() and not self.GetData.Connecting():
             self.GetData.Connect()
             WriteDebug("onHeartbeat")
             self.Count = 0
@@ -202,40 +191,51 @@ def UpdateDevice(sValue, Name):
     if Name == "odometer":
         ID = 1
         Unit = ""
-    if Name == "range":
+    elif Name == "range":
         ID = 2
         Unit = "km"
-    if Name == "level":
+    elif Name == "level":
         ID = 3
         Unit = "%"
-    if Name == "charging":
+    elif Name == "charging":
         ID = 4
         if sValue == "Charging":
-            sValue = 1
-        if sValue == "Disconnected":
-            sValue = 0
+            sValue = "1"
+        elif sValue == "Disconnected":
+            sValue = "0"
         Unit = ""
-    if Name == "latitude":
+    elif Name == "latitude":
         ID = 5
         Unit = ""
-    if Name == "longitude":
+    elif Name == "longitude":
         ID = 6
         Unit = ""
-    if Name == "timestamp":
+    elif Name == "timestamp":
+        Now = int(datetime.datetime.now().strftime("%s"))
+        sValue=Now-int((int(sValue)/1000))
         ID = 7
-#        sValue = timedelta(milliseconds=int(sValue))
-#        Domoticz.Log(str(sValue))
+        Unit = "seconds"
+    elif Name == "chargeRemainingTime":
+        ID = 8
         Unit = ""
+    elif Name == "chargerPower":
+        ID = 9
+        Unit = "kW"
+
+    else:
+        Domoticz.Error(str("Please create an issue at github and write this error. Missing "+str(Name)))
+
     if (ID in Devices):
         if Devices[ID].sValue != sValue:
             Devices[ID].Update(0, str(sValue))
 
-    if (ID not in Devices):
+    elif (ID not in Devices):
         if sValue == "-32768":
             Used = 0
         else:
             Used = 1
         Domoticz.Device(Name=Name, Unit=ID, TypeName="Custom", Options={"Custom": "0;"+Unit}, Used=1, Image=(_plugin.ImageID)).Create()
+        Devices[ID].Update(0, str(sValue), Name=Name)
 
 def CheckInternet():
     WriteDebug("Entered CheckInternet")
@@ -257,7 +257,7 @@ def CheckInternet():
 
 def WriteDebug(text):
     if Parameters["Mode6"] == "Yes":
-        timenow = (datetime.now())
+        timenow = (datetime.datetime.now())
         logger.info(str(timenow)+" "+text)
 
 def onConnect(Connection, Status, Description):
