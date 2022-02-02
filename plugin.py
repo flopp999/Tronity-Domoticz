@@ -3,7 +3,7 @@
 # Author: flopp999
 #
 """
-<plugin key="Tronity" name="Tronity 0.28" author="flopp999" version="0.28" wikilink="https://github.com/flopp999/Tronity-Domoticz" externallink="https://www.tronity.io">
+<plugin key="Tronity" name="Tronity 0.29" author="flopp999" version="0.29" wikilink="https://github.com/flopp999/Tronity-Domoticz" externallink="https://www.tronity.io">
     <description>
         <h2>Support me with a coffee &<a href="https://www.buymeacoffee.com/flopp999">https://www.buymeacoffee.com/flopp999</a></h2><br/>
         <h2>Support me with a donation &<a href="https://www.paypal.com/paypalme/flopp999">https://www.paypal.com/paypalme/flopp999</a></h2><br/>
@@ -216,10 +216,19 @@ def UpdateDevice(sValue, Name):
         ID = 7
         Unit = "seconds"
     elif Name == "chargeRemainingTime":
+        if sValue != "None":
+            sValue = int((int(sValue)/1000/60))
         ID = 8
+        Unit = "minutes"
+    elif Name == "chargeDone":
+        Now = datetime.datetime.now()
+        Done = Now + datetime.timedelta(minutes=int(sValue))
+        if sValue != "None":
+            sValue = Done.strftime("%Y-%m-%d %H:%M")
+        ID = 9
         Unit = ""
     elif Name == "chargerPower":
-        ID = 9
+        ID = 10
         Unit = "kW"
 
     else:
@@ -228,6 +237,8 @@ def UpdateDevice(sValue, Name):
     if (ID in Devices):
         if Devices[ID].sValue != sValue:
             Devices[ID].Update(0, str(sValue))
+            if ID == 8:
+                UpdateDevice(str(sValue), "chargeDone")
 
     elif (ID not in Devices):
         if sValue == "-32768":
@@ -236,6 +247,8 @@ def UpdateDevice(sValue, Name):
             Used = 1
         Domoticz.Device(Name=Name, Unit=ID, TypeName="Custom", Options={"Custom": "0;"+Unit}, Used=1, Image=(_plugin.ImageID)).Create()
         Devices[ID].Update(0, str(sValue), Name=Name)
+        if ID == 9:
+            Devices[ID].Update(0, str(sValue), TypeName="Text")
 
 def CheckInternet():
     WriteDebug("Entered CheckInternet")
