@@ -120,7 +120,6 @@ class BasePlugin:
 
 
     def onMessage(self, Connection, Data):
-        Domoticz.Log(str(Data["Data"]))
         Status = int(Data["Status"])
 
         if Status == 200 or Status == 201:
