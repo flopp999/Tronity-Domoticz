@@ -3,7 +3,7 @@
 # Author: flopp999
 #
 """
-<plugin key="Tronity" name="Tronity 0.29" author="flopp999" version="0.29" wikilink="https://github.com/flopp999/Tronity-Domoticz" externallink="https://www.tronity.io">
+<plugin key="Tronity" name="Tronity 0.30" author="flopp999" version="0.30" wikilink="https://github.com/flopp999/Tronity-Domoticz" externallink="https://www.tronity.io">
     <description>
         <h2>Support me with a coffee &<a href="https://www.buymeacoffee.com/flopp999">https://www.buymeacoffee.com/flopp999</a></h2><br/>
         <h2>Support me with a donation &<a href="https://www.paypal.com/paypalme/flopp999">https://www.paypal.com/paypalme/flopp999</a></h2><br/>
@@ -120,6 +120,7 @@ class BasePlugin:
 
 
     def onMessage(self, Connection, Data):
+        Domoticz.Log(str(Data["Data"]))
         Status = int(Data["Status"])
 
         if Status == 200 or Status == 201:
@@ -188,6 +189,7 @@ def onStart():
     _plugin.onStart()
 
 def UpdateDevice(sValue, Name):
+    Pass = True
     if Name == "odometer":
         ID = 1
         Unit = ""
@@ -203,6 +205,11 @@ def UpdateDevice(sValue, Name):
             sValue = "1"
         elif sValue == "Disconnected":
             sValue = "0"
+        elif sValue == "Complete":
+            sValue = "2"
+        else:
+            Domoticz.Error(str("Please create an issue at github and write this error. Missing "+str(sValue)+"in"+str(Name)))
+            sValue = "-1"
         Unit = ""
     elif Name == "latitude":
         ID = 5
@@ -221,34 +228,48 @@ def UpdateDevice(sValue, Name):
         ID = 8
         Unit = "minutes"
     elif Name == "chargeDone":
-        Now = datetime.datetime.now()
-        Done = Now + datetime.timedelta(minutes=int(sValue))
         if sValue != "None":
+            Now = datetime.datetime.now()
+            Done = Now + datetime.timedelta(minutes=int(sValue))
             sValue = Done.strftime("%Y-%m-%d %H:%M")
+        else:
+            sValue = ("Not charging")
         ID = 9
         Unit = ""
     elif Name == "chargerPower":
         ID = 10
         Unit = "kW"
+    elif Name == "plugged":
+        ID = 11
+        if sValue == "True":
+            sValue = "1"
+        elif sValue == "False":
+            sValue = "0"
+        else:
+            Domoticz.Error(str("Please create an issue at github and write this error. Missing "+str(sValue)+"in"+str(Name)))
+            sValue = "-1"
+        Unit = ""
 
     else:
-        Domoticz.Error(str("Please create an issue at github and write this error. Missing "+str(Name)))
+        Domoticz.Error(str("Please create an issue at github and write this error. Missing "+str(sValue)+"in"+str(Name)))
+        Pass = False
 
-    if (ID in Devices):
-        if Devices[ID].sValue != sValue:
-            Devices[ID].Update(0, str(sValue))
+    if Pass == True:
+        if ID in Devices:
+            if Devices[ID].sValue != sValue:
+                Devices[ID].Update(0, str(sValue))
             if ID == 8:
                 UpdateDevice(str(sValue), "chargeDone")
 
-    elif (ID not in Devices):
-        if sValue == "-32768":
-            Used = 0
-        else:
-            Used = 1
-        Domoticz.Device(Name=Name, Unit=ID, TypeName="Custom", Options={"Custom": "0;"+Unit}, Used=1, Image=(_plugin.ImageID)).Create()
-        Devices[ID].Update(0, str(sValue), Name=Name)
-        if ID == 9:
-            Devices[ID].Update(0, str(sValue), TypeName="Text")
+        elif ID not in Devices:
+            if sValue == "-32768":
+                Used = 0
+            else:
+                Used = 1
+            Domoticz.Device(Name=Name, Unit=ID, TypeName="Custom", Options={"Custom": "0;"+Unit}, Used=1, Image=(_plugin.ImageID)).Create()
+            Devices[ID].Update(0, str(sValue), Name=Name)
+            if ID == 9:
+                Devices[ID].Update(0, str(sValue), TypeName="Text")
 
 def CheckInternet():
     WriteDebug("Entered CheckInternet")
